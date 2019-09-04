@@ -1,5 +1,7 @@
 # Photographers Database
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=photo-market_photo-market-backend&metric=alert_status)](https://sonarcloud.io/dashboard?id=photo-market_photo-market-backend)
+
 ### Photos Type:
 * Event photography
 * Portrait
