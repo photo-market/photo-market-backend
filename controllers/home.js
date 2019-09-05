@@ -1,7 +1,7 @@
 /**
  * GET /
- * Home page.
+ * Stub response.
  */
 exports.index = (req, res) => {
-    res.send({content: 'Hello World'});
+    res.send({content: 'Hi. I am the API.'});
 };

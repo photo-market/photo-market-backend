@@ -14,8 +14,10 @@ homeController = require('../controllers/home');
 userController = require('../controllers/user');
 
 /**
- * Configure router
+ * Configure router map
  */
+
+// Home page
 router.get('/', homeController.index);
 
 // Auth
