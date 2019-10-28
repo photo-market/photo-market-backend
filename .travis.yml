@@ -1,0 +1,33 @@
+language: minimal
+
+env:
+  global:
+    - IMAGE_NAME=${DOCKER_ACCOUNT}/photo-market-api
+
+services:
+  - docker
+
+install:
+  - npm ci
+
+# keep the npm cache around to speed up installs
+cache:
+  directories:
+    - "$HOME/.npm"
+
+script:
+  - >
+    echo "Version: ${TRAVIS_BUILD_NUMBER}" > ./version.txt &&
+    echo "Git commit hash: $(git log --format=%h -1)" >> ./version.txt
+  - docker build -f Dockerfile -t ${IMAGE_NAME} .
+
+deploy:
+  provider: script
+  script: bash deploy.sh
+  on:
+    branch: master
+
+
+# Job lifecycle:              https://docs.travis-ci.com/user/job-lifecycle/
+# Minimal and Generic images  https://docs.travis-ci.com/user/languages/minimal-and-generic/
+# Using Docker in Builds      https://docs.travis-ci.com/user/docker/

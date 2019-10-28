@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
         website: String,
         picture: String
     }
-}, { timestamps: true });
+}, { timestamps: true }); // If set timestamps, mongoose assigns createdAt and updatedAt fields to your schema
 
 /**
  * Password hash middleware.

@@ -9,9 +9,10 @@ const passportConfig = require('../config/passport');
 /**
  * Import controllers
  */
-authController = require('../controllers/auth');
-homeController = require('../controllers/home');
-userController = require('../controllers/user');
+const authController = require('../controllers/auth');
+const homeController = require('../controllers/home');
+const userController = require('../controllers/user');
+const adminController = require("../controllers/admin");
 
 /**
  * Configure router map
@@ -35,5 +36,8 @@ router.get('/auth/unlink/:provider', passportConfig.isAuthenticated, authControl
 router.get('/account', passportConfig.isAuthenticated, userController.getAccount);
 router.post('/account/profile', passportConfig.isAuthenticated, userController.postUpdateProfile);
 router.post('/account/delete', passportConfig.isAuthenticated, userController.postDeleteAccount);
+
+// Service area
+router.get('/admin', passportConfig.hasRole, adminController.getInfo);
 
 module.exports = router;

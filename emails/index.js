@@ -1,5 +1,6 @@
 const Email = require('email-templates');
 const nodemailer = require('nodemailer');
+const logger = require('../config/logger');
 
 const transporter = nodemailer.createTransport({
     service: 'SendGrid',
@@ -14,7 +15,7 @@ const email = new Email({
     send: true,
     preview: false,
     transport: transporter,
-    views: { root: __dirname },
+    views: {root: __dirname},
     message: {
         from: process.env.EMAIL_USER
     }
@@ -22,7 +23,7 @@ const email = new Email({
 
 exports.sendEmail = (options) => {
     return email.send(options)
-        .then(console.log)
-        .catch(console.error);
+        .then(logger.info)
+        .catch(logger.error);
 };
 

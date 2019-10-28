@@ -3,6 +3,8 @@ const axios = require('axios');
 const moment = require('moment');
 const refresh = require('passport-oauth2-refresh');
 const {Strategy: LocalStrategy} = require('passport-local');
+const {Strategy: GoogleStrategy} = require('passport-google-oauth');
+const {Strategy: FacebookStrategy} = require('passport-facebook');
 
 const User = require('../models/User');
 
@@ -21,17 +23,51 @@ passport.deserializeUser((id, done) => {
  */
 passport.use(new LocalStrategy({usernameField: 'email'}, (email, password, done) => {
     User.findOne({email: email.toLowerCase()}, (err, user) => {
-        if (err) {return done(err);}
-        if (!user) {return done(null, false, {msg: `Email ${email} not found.`});}
-        if (!user.password) {return done(null, false, {msg: 'Your account was registered using a sign-in provider. To enable password login, sign in using a provider, and then set a password under your user profile.'});}
+        if (err) {
+            return done(err);
+        }
+        if (!user) {
+            return done(null, false, {msg: `Email ${email} not found.`});
+        }
+        if (!user.password) {
+            return done(null, false, {msg: 'Your account was registered using a sign-in provider. To enable password login, sign in using a provider, and then set a password under your user profile.'});
+        }
 
         user.comparePassword(password, (err, isMatch) => {
-            if (err) { return done(err); }
-            if (isMatch) { return done(null, user); }
+            if (err) {
+                return done(err);
+            }
+            if (isMatch) {
+                return done(null, user);
+            }
             return done(null, false, {msg: 'Invalid email or password.'});
         });
     }).catch(done);
 }));
+
+//
+// passport.use(new GoogleStrategy({
+//         returnURL: 'http://localhost:3000/auth/google/return',
+//         realm: 'http://localhost:3000/'
+//     },
+//     function (identifier, done) {
+//         User.findByOpenID({openId: identifier}, function (err, user) {
+//             return done(err, user);
+//         });
+//     }
+// ));
+//
+// passport.use(new FacebookStrategy({
+//         clientID: FACEBOOK_APP_ID,
+//         clientSecret: FACEBOOK_APP_SECRET,
+//         callbackURL: "http://localhost:3000/auth/facebook/callback"
+//     },
+//     function (accessToken, refreshToken, profile, cb) {
+//         User.findOrCreate({facebookId: profile.id}, function (err, user) {
+//             return cb(err, user);
+//         });
+//     }
+// ));
 
 
 /**
@@ -44,6 +80,7 @@ exports.isAuthenticated = (req, res, next) => {
 
 exports.hasRole = (req, res, next) => {
     // check role
+    // Authorization
 };
 
 /**

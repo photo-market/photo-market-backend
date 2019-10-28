@@ -18,3 +18,8 @@
 * Passport JS https://www.freecodecamp.org/news/learn-how-to-handle-authentication-with-node-using-passport-js-4a56ed18e81e/
 * Production best practices: performance and reliability https://expressjs.com/en/advanced/best-practice-performance.html
 * Project layout: https://medium.com/codebase/structure-of-a-nodejs-api-project-cdecb46ef3f8
+
+
+# Logging
+A Guide to Node.js Logging (2019-05-06)
+https://www.twilio.com/blog/guide-node-js-logging

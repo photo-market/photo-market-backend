@@ -1,5 +1,15 @@
 const validator = require('validator');
+const Joi = require('@hapi/joi');
 const User = require('../models/User');
+
+const validationUserSchema = Joi.object().keys({
+    name: Joi.string().alphanum().min(3).max(30).required(),
+    gender: Joi.string().alphanum().min(3).max(10).required(),
+    location: Joi.string(),
+    website: Joi.string(),
+    // email: Joi.string().email(),
+    // password: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/),
+});
 
 /**
  * GET /account
@@ -8,7 +18,8 @@ const User = require('../models/User');
 exports.getAccount = (req, res) => {
     User.findById(req.user.id, (err, user) => {
         if (err) return next(err);
-        return res.status(200).send({user: user, profile: user.profile || {}});
+        const {profile, email, emailVerified, createdAt, updatedAt} = user;
+        return res.send({email, emailVerified, createdAt, updatedAt, profile});
     });
 };
 
@@ -17,22 +28,30 @@ exports.getAccount = (req, res) => {
  * Update profile information.
  */
 exports.postUpdateProfile = (req, res, next) => {
-    const validationErrors = [];
-    if (!validator.isEmail(req.body.email)) validationErrors.push({msg: 'Please enter a valid email address.'});
-    if (validationErrors.length) {
-        return res.status(400).send({error: validationErrors});
+    const body = req.body;
+
+    // Validation
+    const {error, value} = validationUserSchema.validate(body);
+    if (error) {
+        console.log(value);
+        return res.status(400).send({errors: error});
     }
 
-    req.body.email = validator.normalizeEmail(req.body.email, {gmail_remove_dots: false});
+    // Transform
+    //body.email = validator.normalizeEmail(body.email, {gmail_remove_dots: false});
 
+    // Update
     User.findById(req.user.id, (err, user) => {
         if (err) return next(err);
-        if (user.email !== req.body.email) user.emailVerified = false;
-        user.email = req.body.email || '';
-        user.profile.name = req.body.name || '';
-        user.profile.gender = req.body.gender || '';
-        user.profile.location = req.body.location || '';
-        user.profile.website = req.body.website || '';
+
+        //if (user.email !== newData.email) user.emailVerified = false;
+        //user.email = newData.email || '';
+        user.profile = user.profile || {};
+        user.profile.name = body.name || '';
+        user.profile.gender = body.gender || '';
+        user.profile.location = body.location || '';
+        user.profile.website = body.website || '';
+
         user.save((err) => {
             // If error happened
             if (err) {
