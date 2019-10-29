@@ -61,6 +61,14 @@ app.use(passport.session());
 app.use(require('./routes'));
 
 /**
+ * Show version
+ */
+app.get('/version', (req, res) => {
+    const v = require('fs').readFileSync('./version.txt', "utf8");
+    res.send({version: v})
+});
+
+/**
  * Handle 404 responses.
  */
 app.use((req, res, next) => {
