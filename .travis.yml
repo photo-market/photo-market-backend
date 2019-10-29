@@ -1,11 +1,13 @@
 language: node_js
+node_js:
+  - 12
+
+services:
+  - docker
 
 env:
   global:
     - IMAGE_NAME=${DOCKER_ACCOUNT}/photo-market-api
-
-services:
-  - docker
 
 install:
   - npm ci
@@ -19,10 +21,18 @@ script:
   - docker build -f Dockerfile -t ${IMAGE_NAME} .
 
 deploy:
-  provider: script
-  script: bash deploy.sh
-  on:
-    branch: master
+  # deploy master to production
+  - provider: script
+    script: bash deploy.sh production >/dev/null 2>&1
+    on:
+      branch: master
+
+  # deploy develop to the staging environment
+  - provider: script
+    script: bash deploy.sh staging >/dev/null 2>&1
+    on:
+      branch: develop
+
 
 
 # Job lifecycle:              https://docs.travis-ci.com/user/job-lifecycle/
