@@ -1,3 +1,5 @@
+const util = require('util');
+const logger = require('../config/logger');
 const validator = require('validator');
 const Joi = require('@hapi/joi');
 const User = require('../models/User');
@@ -7,7 +9,7 @@ const validationUserSchema = Joi.object().keys({
     gender: Joi.string().alphanum().min(3).max(10).required(),
     location: Joi.string(),
     website: Joi.string(),
-    // email: Joi.string().email(),
+    email: Joi.string().email(),
     // password: Joi.string().regex(/^[a-zA-Z0-9]{3,30}$/),
 });
 
@@ -31,39 +33,39 @@ exports.postUpdateProfile = (req, res, next) => {
     const body = req.body;
 
     // Validation
-    const {error, value} = validationUserSchema.validate(body);
+    const {error} = validationUserSchema.validate(body);
     if (error) {
         return res.status(400).send({errors: error.details});
     }
 
-    // Transform
-    //body.email = validator.normalizeEmail(body.email, {gmail_remove_dots: false});
-
-    // Update
-    User.findById(req.user.id, (err, user) => {
-        if (err) return next(err);
-
-        //if (user.email !== newData.email) user.emailVerified = false;
-        //user.email = newData.email || '';
-        user.profile = user.profile || {};
-        user.profile.name = body.name || '';
-        user.profile.gender = body.gender || '';
-        user.profile.location = body.location || '';
-        user.profile.website = body.website || '';
-
-        user.save((err) => {
-            // If error happened
-            if (err) {
-                if (err.code === 11000) { // MongoDB 11000 - duplicate key error index
-                    return res.status(400).send({errors: {msg: 'The email address you have entered is already associated with an account.'}});
-                }
-                return next(err);
+    User.findById(req.user.id)
+        .then((dbUser) => {
+            // Transform
+            //body.email = validator.normalizeEmail(body.email, {gmail_remove_dots: false});
+            dbUser.email = body.email || dbUser.email;
+            const {profile} = dbUser;
+            dbUser.profile = profile || {};
+            dbUser.profile.name = body.name || '';
+            dbUser.profile.gender = body.gender || '';
+            dbUser.profile.location = body.location || '';
+            dbUser.profile.website = body.website || '';
+            return dbUser;
+        })
+        .then((dbUser) => {
+            return dbUser.save();
+        })
+        .then(() => {
+            res.status(200).send({success: 'Profile information has been updated.'});
+        })
+        .catch((err) => {
+            if (err && err.code === 11000) { // MongoDB 11000 - duplicate key error index
+                return res.status(400).send({error: 'The email address you have entered is already associated with an account.'});
             }
+            logger.error(`Can't update user profile (userId = ${req.user.id}`, err);
+            res.status(500).send({error: "Can't update profile for now."});
+            // next(err); // or this one
+        })
 
-            // Successfully saved
-            return res.status(200).send({message: {msg: 'Profile information has been updated.'}});
-        });
-    });
 };
 
 /**
