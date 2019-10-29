@@ -22,8 +22,7 @@
     "connect-mongo": "^3.1.0",
     "dotenv": "^8.2.0",
     "email-templates": "^6.0.3",
-    "errorhandler": "^1.5.1",
-    "express": "latest",
+    "express": "^4.17.1",
     "express-pino-logger": "^4.0.0",
     "express-session": "^1.17.0",
     "express-status-monitor": "^1.2.7",
@@ -44,6 +43,7 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
+    "errorhandler": "^1.5.1",
     "mocha": "^6.2.2",
     "pino-colada": "^1.4.5",
     "should": "^13.2.3"

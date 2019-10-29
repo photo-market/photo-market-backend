@@ -1,6 +1,7 @@
 const passport = require('passport');
 const validator = require('validator');
 const mailChecker = require('mailchecker');
+const logger = require('../config/logger');
 const Joi = require('@hapi/joi');
 const {promisify} = require('util');
 const crypto = require('crypto');
@@ -10,17 +11,22 @@ const emails = require('../emails');
 const User = require('../models/User');
 const randomBytesAsync = promisify(crypto.randomBytes);
 
-
-const validationPostLogin = {
+const validationPostLoginSchema = Joi.object().keys({
     email: Joi.string().email().min(3).max(30).required(),
     password: Joi.string().min(6).max(30).required(),
-};
+});
 
-const postUpdatePassword = {
+const postUpdatePasswordSchema = Joi.object().keys({
     email: Joi.string().email().min(3).max(30).required(),
     password: Joi.string().min(6).max(30).required(),
     confirmPassword: Joi.ref('password'),
-};
+});
+
+const validationSignupSchema = Joi.object().keys({
+    email: Joi.string().email().min(3).max(30).required(),
+    password: Joi.string().min(6).max(30).required()
+});
+
 
 /**
  * POST /login
@@ -28,9 +34,9 @@ const postUpdatePassword = {
  */
 exports.postLogin = (req, res, next) => {
     // Validation
-    const {error, value} = validationPostLogin.validate(req.body);
+    const {error} = validationPostLoginSchema.validate(req.body);
     if (error) {
-        return res.status(400).send({errors: value});
+        return res.status(400).send({errors: error.details});
     }
 
     // Transform
@@ -53,7 +59,7 @@ exports.postLogin = (req, res, next) => {
 exports.logout = (req, res) => {
     req.logOut(); // PassportJS
     req.session.destroy((err) => {
-        if (err) console.log('Error : Failed to destroy the session during logout.', err);
+        if (err) logger.error('Error : Failed to destroy the session during logout.', err);
         req.user = null;
         res.status(201).send();
     });
@@ -66,9 +72,9 @@ exports.logout = (req, res) => {
  */
 exports.postUpdatePassword = (req, res, next) => {
     // Validation
-    const {error, value} = postUpdatePassword.validate(req.body);
+    const {error} = postUpdatePasswordSchema.validate(req.body);
     if (error) {
-        return res.status(400).send({errors: value});
+        return res.status(400).send({errors: error.details});
     }
 
     User.findById(req.user.id, (err, user) => {
@@ -87,24 +93,21 @@ exports.postUpdatePassword = (req, res, next) => {
  * Create a new local account.
  */
 exports.postSignup = (req, res, next) => {
-    const validationErrors = [];
-    if (!validator.isEmail(req.body.email)) validationErrors.push({msg: 'Please enter a valid email address.'});
-    if (!validator.isLength(req.body.password, {min: 6})) validationErrors.push({msg: 'Password must be at least 8 characters long'});
-    if (req.body.password !== req.body.confirmPassword) validationErrors.push({msg: 'Passwords do not match'});
-    if (validationErrors.length) {
-        return res.status(400).send({error: validationErrors});
+    const {error} = validationSignupSchema.validate(req.body);
+    if (error) {
+        return res.status(400).send({errors: error.details});
     }
 
-    req.body.email = validator.normalizeEmail(req.body.email, {gmail_remove_dots: false});
+    const email = validator.normalizeEmail(req.body.email, {gmail_remove_dots: false});
 
     const user = new User({
-        email: req.body.email,
+        email,
         password: req.body.password
     });
 
-    User.findOne({email: req.body.email}, (err, existingUser) => {
+    User.findOne({email}, (err, existingUser) => {
         if (err) return next(err);
-        if (existingUser) return res.status(400).send({error: {msg: 'Account with that email address already exists.'}});
+        if (existingUser) return res.status(400).send({errors: {msg: 'Account with that email address already exists.'}});
         user.save((err) => {
             if (err) return next(err);
             req.logIn(user, (err) => {
@@ -127,6 +130,7 @@ exports.getVerifyEmailToken = (req, res, next) => {
     if (req.user.emailVerified) {
         return res.status(200).send({msg: 'The email address has been verified already.'});
     }
+
     if (req.params.token && (!validator.isHexadecimal(req.params.token))) {
         validationErrors.push({msg: 'Invalid Token.  Please retry.'});
     }
@@ -149,7 +153,7 @@ exports.getVerifyEmailToken = (req, res, next) => {
                 return res.status(200).send({info: 'Thank you for verifying your email address.'});
             })
             .catch((error) => {
-                console.log('Error saving the user profile to the database after email verification', error);
+                logger.error('Error saving the user profile to the database after email verification', error);
                 return res.status(200).send({error: 'There was an error when updating your profile.  Please try again later.'});
             });
     }
@@ -160,6 +164,7 @@ exports.getVerifyEmailToken = (req, res, next) => {
  * Send "verify email address" email
  */
 exports.postVerifyEmail = (req, res, next) => {
+
     if (req.user.emailVerified) {
         return res.status(200).send({info: 'The email address already has been verified.'})
     }

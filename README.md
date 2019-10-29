@@ -23,3 +23,6 @@
 # Logging
 A Guide to Node.js Logging (2019-05-06)
 https://www.twilio.com/blog/guide-node-js-logging
+
+Node.js Error Handling Best Practices: Ship With Confidence (NOVEMBER 28, 2018)
+https://stackify.com/node-js-error-handling/

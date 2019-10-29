@@ -33,8 +33,7 @@ exports.postUpdateProfile = (req, res, next) => {
     // Validation
     const {error, value} = validationUserSchema.validate(body);
     if (error) {
-        console.log(value);
-        return res.status(400).send({errors: error});
+        return res.status(400).send({errors: error.details});
     }
 
     // Transform

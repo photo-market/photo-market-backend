@@ -62,17 +62,25 @@ app.use(passport.session());
 app.use(require('./routes'));
 
 /**
+ * Handle 404 responses.
+ */
+app.use((req, res, next) => {
+    res.status(404).send({error: "404 - Not Found"})
+});
+
+/**
  * Error Handler.
+ * Must be added at the end of the middleware function stack.
  */
 if (process.env.NODE_ENV === 'development') {
-    // only use in development
+    // show stacktraces only use in development
     app.use(errorHandler());
-} else {
-    app.use((err, req, res, next) => {
-        console.error(err);
-        res.status(500).send({error: 'Server Error'});
-    });
 }
+
+app.use((err, req, res, next) => {
+    logger.error(err);
+    res.status(500).send({error: 'Server Error'});
+});
 
 /**
  * Start Express server.

@@ -13,6 +13,7 @@ const authController = require('../controllers/auth');
 const homeController = require('../controllers/home');
 const userController = require('../controllers/user');
 const adminController = require("../controllers/admin");
+const testController = require("../controllers/test");
 
 /**
  * Configure router map
@@ -39,5 +40,6 @@ router.post('/account/delete', passportConfig.isAuthenticated, userController.po
 
 // Service area
 router.get('/admin', passportConfig.hasRole, adminController.getInfo);
+router.get('/test/throw', testController.getThrow);
 
 module.exports = router;
