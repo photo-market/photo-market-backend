@@ -10,7 +10,7 @@ env:
     - IMAGE_NAME=${DOCKER_ACCOUNT}/photo-market-api
 
 install:
-  - npm ci
+  - npm ci --only=production
 
 cache: npm
 

@@ -4,8 +4,7 @@
   "description": "Rest API for photo-market website.",
   "main": "app.js",
   "scripts": {
-    "dev": "node app.js | ./node_modules/.bin/pino-colada",
-    "prod": "node app.js",
+    "start": "node app.js | ./node_modules/.bin/pino-colada",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint \"**/*.js\""
   },

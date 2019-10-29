@@ -2,7 +2,6 @@ const express = require('express');
 const compression = require('compression');
 const bodyParser = require('body-parser');
 const passport = require('passport');
-const errorHandler = require('errorhandler');
 const dotenv = require('dotenv');
 const chalk = require('chalk');
 const session = require('express-session');
@@ -74,6 +73,7 @@ app.use((req, res, next) => {
  */
 if (process.env.NODE_ENV === 'development') {
     // show stacktraces only use in development
+    const errorHandler = require('errorhandler');
     app.use(errorHandler());
 }
 
