@@ -1,5 +1,6 @@
 const express = require('express');
 const compression = require('compression');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 const dotenv = require('dotenv');
@@ -42,8 +43,12 @@ const app = express();
 app.set('port', process.env.PORT || 8080);
 app.disable('x-powered-by');
 app.use(expressLogger);
-app.use(expressStatusMonitor({path: '/status', ignoreStartsWith: '/admin'}));
+app.use(cors({
+    origin: ['http://localhost:3000', 'https://photo-market.club'],
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}));
 app.use(compression());
+app.use(expressStatusMonitor({path: '/status', ignoreStartsWith: '/admin'}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(session({
