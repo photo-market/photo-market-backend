@@ -16,8 +16,7 @@ cache: npm
 
 script:
   - >
-    echo "Version: ${TRAVIS_BUILD_NUMBER}" > ./version.txt &&
-    echo "Git commit hash: $(git log --format=%h -1)" >> ./version.txt
+    echo "Build number: ${TRAVIS_BUILD_NUMBER}, Git commit hash: $(git log --format=%h -1)" > ./version.txt
   - docker build -f Dockerfile -t ${IMAGE_NAME} .
 
 deploy:
