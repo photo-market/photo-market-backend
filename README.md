@@ -13,6 +13,8 @@
 * Commercial
 
 ## Useful reading
+* The Twelve-Factor App  
+  https://12factor.net
 * The largest Node.js best practices list  
   https://github.com/goldbergyoni/nodebestpractices
 * Error Handling in Node.js  
