@@ -1,3 +1,4 @@
+const http = require('http');
 const express = require('express');
 const compression = require('compression');
 const cors = require('cors');
@@ -36,6 +37,11 @@ mongoose.connection.on('error', (err) => {
  * Create Express server.
  */
 const app = express();
+
+/**
+ * Initialize a simple http server
+ */
+const server = http.createServer(app);
 
 /**
  * Express configuration.
@@ -95,10 +101,16 @@ app.use((err, req, res, next) => {
     res.status(500).send({error: 'Server Error'});
 });
 
+
+/**
+ * Add chat.
+ */
+require('./config/chat')(server);
+
 /**
  * Start Express server.
  */
-app.listen(app.get('port'), () => {
+server.listen(app.get('port'), () => {
     logger.info('%s App is running at http://localhost:%d in %s mode', chalk.green('✓'), app.get('port'), app.get('env'));
     logger.info('Press CTRL-C to stop\n');
 });

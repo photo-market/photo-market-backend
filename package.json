@@ -4,7 +4,7 @@
   "description": "Rest API for photo-market website.",
   "main": "app.js",
   "scripts": {
-    "dev": "node app.js | ./node_modules/.bin/pino-colada",
+    "dev": "LOG_LEVEL=debug node app.js | ./node_modules/.bin/pino-colada",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint \"**/*.js\""
   },
@@ -27,6 +27,7 @@
     "express-session": "^1.17.0",
     "express-status-monitor": "^1.2.7",
     "helmet": "^3.21.2",
+    "http": "0.0.0",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.15",
     "mailchecker": "^3.3.1",
@@ -40,7 +41,8 @@
     "passport-oauth2-refresh": "^1.1.0",
     "pino": "^5.13.5",
     "validator": "^12.0.0",
-    "winston": "^3.2.1"
+    "winston": "^3.2.1",
+    "ws": "^7.2.0"
   },
   "devDependencies": {
     "errorhandler": "^1.5.1",

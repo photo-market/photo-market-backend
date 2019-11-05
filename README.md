@@ -12,11 +12,29 @@
 * Drone 
 * Commercial
 
+## Websockets
+nginx don't support websocket，but it can proxy websocket connetions
+```
+location /chat/ {
+    proxy_pass http://backend;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+}
+```
+Source: http://nginx.org/en/docs/http/websocket.html
+
 ## Useful reading
 * The Twelve-Factor App  
   https://12factor.net
 * The largest Node.js best practices list  
   https://github.com/goldbergyoni/nodebestpractices
+* How to build real-time applications using WebSockets with AWS API Gateway and Lambda  
+  https://www.freecodecamp.org/news/real-time-applications-using-websockets-with-aws-api-gateway-and-lambda-a5bb493e9452/
+* Real-time applications with API Gateway WebSockets and AWS Lambda
+  https://serverless.com/blog/api-gateway-websockets-support/
+* Build a Serverless Web Application
+  https://aws.amazon.com/getting-started/projects/build-serverless-web-app-lambda-apigateway-s3-dynamodb-cognito/
 * Production Practices - Error Handling in Node.js  
   https://www.joyent.com/node-js/production/design/errors
 * A Guide to Node.js Logging (2019-05-06)

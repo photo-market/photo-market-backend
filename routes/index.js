@@ -12,8 +12,6 @@ const passportConfig = require('../config/passport');
 const authController = require('../controllers/auth');
 const homeController = require('../controllers/home');
 const userController = require('../controllers/user');
-const adminController = require("../controllers/admin");
-const testController = require("../controllers/test");
 
 /**
  * Configure router map
@@ -39,7 +37,6 @@ router.post('/account/profile', passportConfig.isAuthenticated, userController.p
 router.post('/account/delete', passportConfig.isAuthenticated, userController.postDeleteAccount);
 
 // Service area
-router.get('/admin', passportConfig.hasRole, adminController.getInfo);
-router.get('/test/throw', testController.getThrow);
+router.use('/admin', require('./admin'));
 
 module.exports = router;

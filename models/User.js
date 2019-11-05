@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    email: { type: String, unique: true },
+    email: { type: String, unique: true, required: [true, `Why no password?`] },
     password: String,
     passwordResetToken: String,
     passwordResetExpires: Date,
@@ -25,7 +25,9 @@ const userSchema = new mongoose.Schema({
         website: String,
         picture: String
     }
-}, { timestamps: true }); // If set timestamps, mongoose assigns createdAt and updatedAt fields to your schema
+}, {
+    timestamps: true
+}); // If set timestamps, mongoose assigns createdAt and updatedAt fields to your schema
 
 /**
  * Password hash middleware.
