@@ -1,14 +1,17 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const {Schema} = mongoose;
 
-const userSchema = new mongoose.Schema({
-    email: { type: String, unique: true, required: [true, `Why no password?`] },
+const userSchema = new Schema({
+    email: {type: String, unique: true, required: [true, `Why no password?`]},
     password: String,
     passwordResetToken: String,
     passwordResetExpires: Date,
     emailVerificationToken: String,
     emailVerified: Boolean,
+    lastSeen: Date,
+    connectionIds: Array,
 
     snapchat: String,
     facebook: String,
@@ -34,11 +37,17 @@ const userSchema = new mongoose.Schema({
  */
 userSchema.pre('save', function save(next) {
     const user = this;
-    if (!user.isModified('password')) { return next(); }
+    if (!user.isModified('password')) {
+        return next();
+    }
     bcrypt.genSalt(10, (err, salt) => {
-        if (err) { return next(err); }
+        if (err) {
+            return next(err);
+        }
         bcrypt.hash(user.password, salt, (err, hash) => {
-            if (err) { return next(err); }
+            if (err) {
+                return next(err);
+            }
             user.password = hash;
             next();
         });

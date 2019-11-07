@@ -103,9 +103,9 @@ app.use((err, req, res, next) => {
 
 
 /**
- * Add chat.
+ * Add websocket.
  */
-require('./config/chat')(server);
+require('./config/websocket')(server);
 
 /**
  * Start Express server.
