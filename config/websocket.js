@@ -62,13 +62,13 @@ function handleClose() {
     });
 }
 
-function sendMessage(userIds, dataObj) {
-    if (!(userIds instanceof Array)) {
-        userIds = [userIds];
-    }
-    clients.filter(c => userIds.includes(c.userId)).forEach(client => {
-        client.socket.send(JSON.stringify(dataObj));
-    });
+function sendMessage(userId, dataObj) {
+    clients
+        .filter(client => client.userId === userId)
+        .forEach(client => {
+            logger.info(`Sending websocket message to user ${userId}.`);
+            client.socket.send(JSON.stringify(dataObj));
+        });
 }
 
 /**

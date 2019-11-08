@@ -24,59 +24,21 @@ function makeClientHandler(sendEvent) {
         return _updateLastSeen(data);
     }
 
-    //  {"action": "createConversation", "data": {"uuid": "sfdae3223", "recipientId": "5d681ca935c2e215975a373a"}}
-    async function createConversation(data) {
-        logger.info(`Creating conversation. \n` + JSON.stringify(data));
-
-        if (!data.userId || !data.recipientId) {
-            return Promise.reject({error: 'userId and recipientId are required.'});
-        }
-
-        // Check if we already have such conversation?
-        const existingConversation = await Conversation.find({participants: [data.userId, data.recipientId]}).exec();
-        if (existingConversation.length > 0) {
-            sendEvent(data.userId, {
-                action: `createConversation`,
-                data: {
-                    message: 'Conversation already exist.',
-                    uuid: data.uuid,
-                    conversationId: existingConversation[0]._id
-                }
-            });
-            return Promise.resolve("Conversation already exist.");
-        }
-
-        const conversation = new Conversation({
-            participants: [data.userId, data.recipientId],
-            lastMessage: "",
-            lastMessageTime: ""
-        });
-
-        return conversation.save()
-            .then((dbConversation) => {
-                sendEvent(data.userId, {
-                    action: `createConversation`,
-                    data: {
-                        message: 'Conversation created.',
-                        uuid: data.uuid,
-                        conversationId: dbConversation._id
-                    }
-                });
-                return "New conversation saved in the DB.";
-            }).catch((e) => {
-                logger.warn(`Can't save new conversation.\n${JSON.stringify(e)}`);
-                return e;
-            });
-    }
-
-    // {"action": "sendMessage", "data": {"uuid":"1231sdf", "conversationId": "5dc3ad9201e6e603455a665a", "content": "Hello world"}}
-    function sendMessage(data) {
+    // {"action": "sendMessage", "data": {"uuid":"1231sdf", "conversationId": "5dc5d37d6bac33152964af9f", "content": "Hello world"}}
+    async function sendMessage(data) {
         if (!data.uuid || !data.userId || !data.conversationId || !data.content) {
             logger.warn(`Incorrect input prarams.`);
             return Promise.reject({error: 'Incorrect request.'});
         }
 
         const senderId = data.userId;
+
+        // Check such conversation
+        const conversation = await Conversation.findById(data.conversationId);
+        if (!conversation || !conversation.participants.some(p => String(p._id) === data.userId)) {
+            logger.warn(`No such conversation or user doesn't belong to this conversation.`);
+            return;
+        }
 
         const saveMessage = (message) => {
             logger.info(`Saving message.`);
@@ -93,16 +55,16 @@ function makeClientHandler(sendEvent) {
         const notifyOthers = async (message) => {
             logger.info(`Notifying others about new message.\n` + JSON.stringify(message));
             try {
-                const c = await Conversation.findById(data.conversationId).exec();
-                c.participants
-                //.filter(user => user._id !== data.userId)
+                conversation.participants
+                    .filter(user => String(user._id) !== data.userId)
                     .forEach(user => {
                         logger.info(`Send message to ${user._id}.`);
-                        sendEvent(user._id, {
-                            action: "newMessage",
+                        sendEvent(String(user._id), {
+                            action: "NEW_MESSAGE",
+                            messageId: String(message._id),
                             content: data.content,
                             conversationId: data.conversationId,
-                            senderId: data.userId
+                            senderId: data.userId,
                         });
                     });
             } catch (e) {
@@ -150,6 +112,57 @@ function makeClientHandler(sendEvent) {
             .catch(fail);
     }
 
+    /**
+     * MOVE IT TO HTTP?
+     *   {"action": "createConversation", "data": {"uuid": "sfdae3223", "recipientId": "5d681ca935c2e215975a373a"}}
+     */
+    async function createConversation(data) {
+        logger.info(`Creating conversation. \n` + JSON.stringify(data));
+
+        if (!data.userId || !data.recipientId) {
+            return Promise.reject({error: 'userId and recipientId are required.'});
+        }
+
+        // Check if we already have such conversation?
+        const existingConversation = await Conversation.find({participants: [data.userId, data.recipientId]}).exec();
+        if (existingConversation.length > 0) {
+            sendEvent(data.userId, {
+                action: `createConversation`,
+                data: {
+                    message: 'Conversation already exist.',
+                    uuid: data.uuid,
+                    conversationId: existingConversation[0]._id
+                }
+            });
+            return Promise.resolve("Conversation already exist.");
+        }
+
+        const conversation = new Conversation({
+            participants: [data.userId, data.recipientId],
+            lastMessage: "",
+            lastMessageTime: ""
+        });
+
+        return conversation.save()
+            .then((dbConversation) => {
+                sendEvent(data.userId, {
+                    action: `createConversation`,
+                    data: {
+                        message: 'Conversation created.',
+                        uuid: data.uuid,
+                        conversationId: dbConversation._id
+                    }
+                });
+                return "New conversation saved in the DB.";
+            }).catch((e) => {
+                logger.warn(`Can't save new conversation.\n${JSON.stringify(e)}`);
+                return e;
+            });
+    }
+
+    /**
+     * MOVE IT TO HTTP?
+     */
     function getConversations(data) {
         const {userId} = data;
 
@@ -180,6 +193,9 @@ function makeClientHandler(sendEvent) {
 
     }
 
+    /**
+     * MOVE IT TO HTTP?
+     */
     function getMessages() {
         const {conversationId} = data;
 
@@ -204,10 +220,11 @@ function makeClientHandler(sendEvent) {
         const actions = {
             '$connect': $connect,
             '$disconnect': $disconnect,
+            'sendMessage': sendMessage,
+            // do via http?
             'createConversation': createConversation,
             'getConversations': getConversations,
             'getMessages': getMessages,
-            'sendMessage': sendMessage
         };
 
         if (!actions[req.action]) {
