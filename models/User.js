@@ -11,7 +11,7 @@ const userSchema = new Schema({
     emailVerificationToken: String,
     emailVerified: Boolean,
     lastSeen: Date,
-    connectionIds: Array,
+    //connectionIds: Array, // Will be used later to identify AWS API Gateway websockets
 
     snapchat: String,
     facebook: String,

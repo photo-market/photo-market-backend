@@ -3,212 +3,227 @@ const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 const User = require('../models/User');
 
-function $connect(data) {
-    if (!data.userId || !data.connectionId) {
-        return Promise.reject(`UserId and ConnectionId is required.`);
-    }
-    return User.findById(data.userId).exec()
-        .then((dbUser) => {
-            if (!dbUser.connectionIds) dbUser.connectionIds = [data.connectionId];
-            else dbUser.connectionIds.push(data.connectionId);
-            dbUser.save();
-        })
-}
+function makeClientHandler(sendEvent) {
 
-function $disconnect(data) {
-    if (!data.userId || !data.connectionId) {
-        return Promise.reject(`UserId and ConnectionId is required.`);
-    }
-    return User.findById(data.userId).exec()
-        .then((user) => {
-            user.lastSeen = new Date();
-            user.connectionIds = user.connectionIds.filter(cid => cid !== data.connectionId);
-            return user.save();
-        });
-}
-
-//  {"action": "createConversation", "data": {"uuid": "sfdae3223", "recipientId": "5d681ca935c2e215975a373a"}}
-async function handleCreateConversation(data) {
-    if (!data.userId || !data.recipientId) {
-        return Promise.reject({error: 'Incorrect request'});
+    function _updateLastSeen(data) {
+        if (!data.userId) {
+            return Promise.reject(`UserId is required.`);
+        }
+        return User.findById(data.userId).exec()
+            .then((user) => {
+                user.lastSeen = new Date();
+                return user.save();
+            });
     }
 
-    // Check if we already have such conversation?
-    const existingConversation = await Conversation.find({participants: [data.userId, data.recipientId]}).exec();
-    if (existingConversation.length > 0) {
-        return Promise.resolve({
-            action: `createConversation`,
-            data: {
-                message: 'Ok',
-                uuid: data.uuid,
-                conversationId: existingConversation[0]._id
-            }
-        });
+    function $connect(data) {
+        return _updateLastSeen(data);
     }
 
-    const conversation = new Conversation({
-        participants: [data.userId, data.recipientId],
-        lastMessage: "",
-        lastMessageTime: ""
-    });
+    function $disconnect(data) {
+        return _updateLastSeen(data);
+    }
 
-    return conversation.save()
-        .then((dbConversation) => {
-            return {
+    //  {"action": "createConversation", "data": {"uuid": "sfdae3223", "recipientId": "5d681ca935c2e215975a373a"}}
+    async function createConversation(data) {
+        logger.info(`Creating conversation. \n` + JSON.stringify(data));
+
+        if (!data.userId || !data.recipientId) {
+            return Promise.reject({error: 'userId and recipientId are required.'});
+        }
+
+        // Check if we already have such conversation?
+        const existingConversation = await Conversation.find({participants: [data.userId, data.recipientId]}).exec();
+        if (existingConversation.length > 0) {
+            sendEvent(data.userId, {
                 action: `createConversation`,
                 data: {
-                    message: 'Ok',
+                    message: 'Conversation already exist.',
                     uuid: data.uuid,
-                    conversationId: dbConversation._id
+                    conversationId: existingConversation[0]._id
                 }
-            }
-        }).catch((e) => {
-            logger.warn(`handleCreateConversation: Service returned error.\n${JSON.stringify(e)}`);
-            return e;
+            });
+            return Promise.resolve("Conversation already exist.");
+        }
+
+        const conversation = new Conversation({
+            participants: [data.userId, data.recipientId],
+            lastMessage: "",
+            lastMessageTime: ""
         });
-}
 
-// {"action": "sendMessage", "data": {"uuid":"1231sdf", "conversationId": "5dc3ad9201e6e603455a665a", "senderId": "5d681c6f7d515f1547fe0c6c", "content": "Hello world"}}
-function handleSendMessage(data) {
-    if (!data.uuid || !data.senderId || !data.content) {
-        logger.warn(`Incorrect input prarams.`);
-        return Promise.reject({error: 'Incorrect request.'});
-    }
-
-    const saveMessage = (message) => {
-        return message.save();
-    };
-
-    const updateLastMessage = (message) => {
-        return Conversation.findById(message.conversationId).exec()
+        return conversation.save()
             .then((dbConversation) => {
-                dbConversation.lastMessage = message.content;
-                dbConversation.lastMessageTime = message.createdAt;
-                return dbConversation.save().then(() => ({message: message, conversation: dbConversation}));
+                sendEvent(data.userId, {
+                    action: `createConversation`,
+                    data: {
+                        message: 'Conversation created.',
+                        uuid: data.uuid,
+                        conversationId: dbConversation._id
+                    }
+                });
+                return "New conversation saved in the DB.";
+            }).catch((e) => {
+                logger.warn(`Can't save new conversation.\n${JSON.stringify(e)}`);
+                return e;
+            });
+    }
+
+    // {"action": "sendMessage", "data": {"uuid":"1231sdf", "conversationId": "5dc3ad9201e6e603455a665a", "content": "Hello world"}}
+    function sendMessage(data) {
+        if (!data.uuid || !data.userId || !data.conversationId || !data.content) {
+            logger.warn(`Incorrect input prarams.`);
+            return Promise.reject({error: 'Incorrect request.'});
+        }
+
+        const senderId = data.userId;
+
+        const saveMessage = (message) => {
+            logger.info(`Saving message.`);
+            return message.save();
+        };
+
+        const updateLastMessage = (message) => {
+            logger.info(`Updating last message in conversation.`);
+            message.conversation.lastMessage = message.content;
+            message.conversation.lastMessageTime = message.createdAt;
+            return message.save();
+        };
+
+        const notifyOthers = async (message) => {
+            logger.info(`Notifying others about new message.\n` + JSON.stringify(message));
+            try {
+                const c = await Conversation.findById(data.conversationId).exec();
+                c.participants
+                //.filter(user => user._id !== data.userId)
+                    .forEach(user => {
+                        logger.info(`Send message to ${user._id}.`);
+                        sendEvent(user._id, {
+                            action: "newMessage",
+                            content: data.content,
+                            conversationId: data.conversationId,
+                            senderId: data.userId
+                        });
+                    });
+            } catch (e) {
+                logger.error(`Can't notify others.\n` + JSON.stringify(e));
+            }
+            return Promise.resolve(message);
+        };
+
+        const success = (message) => {
+            logger.info(`Sending result to the user back.`);
+            sendEvent(senderId, {
+                action: `messageSent`,
+                data: {
+                    uuid: data.uuid,
+                    messageId: message._id,
+                    message: `Reply successfully sent!`,
+                }
+            });
+            return Promise.resolve(message);
+        };
+
+        const fail = (err) => {
+            logger.warn(err);
+            return ({
+                action: `sendMessage`,
+                data: {
+                    uuid: data.uuid,
+                    message: `Can't save message.`,
+                }
             })
-    };
+        };
 
-    const notifyOthers = (message, conversation) => {
-        logger.info(conversation.participants);
-        conversation.participants.filter(user => user._id !== data.senderId).forEach(user => {
-            // send message
-            logger.info(`send message to ${user.connectionIds}`);
+        const newMsg = new Message({
+            uuid: data.uuid,
+            conversation: data.conversationId,
+            sender: data.userId,
+            createdAt: Date.now(),
+            content: data.content,
         });
-    };
 
-    const success = (message) => ({
-        action: `sendMessage`,
-        data: {
-            message: 'Reply successfully sent!',
-            messageId: message._id,
-            uuid: message.uuid
+        return saveMessage(newMsg)
+            .then(updateLastMessage)
+            .then(notifyOthers)
+            .then(success)
+            .catch(fail);
+    }
+
+    function getConversations(data) {
+        const {userId} = data;
+
+        if (!userId) {
+            return Promise.reject({error: 'Incorrect request.'});
         }
-    });
 
-    const fail = (err) => {
-        logger.warn(err);
-        return ({
-            action: `sendMessage`,
+        const getConversations = (userId) => Conversation.find({participants: userId}).exec();
+
+        const success = (conversations) => ({
+            action: `getConversations`,
             data: {
-                message: `Can't save message.`,
-                // messageId: message._id,
-                // uuid: message.uuid
+                message: `Ok`,
+                conversations: conversations
             }
-        })
-    };
+        });
 
-    // Save message
-    const newMsg = new Message({
-        conversationId: data.conversationId,
-        uuid: data.uuid,
-        createdAt: Date.now(),
-        senderId: data.senderId,
-        recipientId: data.recipient,
-        content: data.content,
-    });
-
-    return saveMessage(newMsg)
-        .then(updateLastMessage)
-        .then(notifyOthers)
-        .then(success)
-        .catch(fail);
-}
-
-function handleGetConversations(data) {
-    const {userId} = data;
-
-    // Validation
-    if (!userId) {
-        return Promise.reject({error: 'Incorrect request.'});
-    }
-
-    // Only return one message from each conversation to display as snippet
-    const getConversations = (userId) => Conversation.find({participants: userId}).exec();
-
-    const success = (conversations) => ({
-        action: `getConversations`,
-        data: {
-            message: `Ok`,
-            conversations: conversations
-        }
-    });
-
-    const fail = () => ({
-        action: `getConversations`,
-        data: {
-            message: `Can't get conversations.`,
-        }
-    });
-
-    return getConversations(data.userId)
-        .then(success)
-        .catch(fail);
-
-}
-
-function handleGetMessages() {
-    const {conversationId} = data;
-
-    Message.find({conversationId: conversationId})
-        .select('createdAt body author')
-        .sort('-createdAt')
-        .populate({
-            path: 'author',
-            select: 'profile.firstName profile.lastName'
-        })
-        .exec((err, messages) => {
-            if (err) {
-                callback({error: err});
-                return;
+        const fail = () => ({
+            action: `getConversations`,
+            data: {
+                message: `Can't get conversations.`,
             }
-            callback({conversation: messages});
         });
+
+        return getConversations(data.userId)
+            .then(success)
+            .catch(fail);
+
+    }
+
+    function getMessages() {
+        const {conversationId} = data;
+
+        Message.find({conversationId: conversationId})
+            .select('createdAt body author')
+            .sort('-createdAt')
+            .populate({
+                path: 'author',
+                select: 'profile.firstName profile.lastName'
+            })
+            .exec((err, messages) => {
+                if (err) {
+                    callback({error: err});
+                    return;
+                }
+                callback({conversation: messages});
+            });
+    }
+
+    // Acts a role of API mapping
+    function handleEvent(req) {
+        const actions = {
+            '$connect': $connect,
+            '$disconnect': $disconnect,
+            'createConversation': createConversation,
+            'getConversations': getConversations,
+            'getMessages': getMessages,
+            'sendMessage': sendMessage
+        };
+
+        if (!actions[req.action]) {
+            return Promise.reject(`Unknown action type "${req.action}".`)
+        }
+
+        actions[req.action](req.data)
+            .then((res) => {
+                logger.info(`Task "${req.action}" successfully done. Details: \n` + JSON.stringify(res));
+            })
+            .catch((err) => {
+                logger.error(err);
+            });
+    }
+
+    return handleEvent;
 }
 
-module.exports = (req, ws) => {
-    if (!req || !ws) {
-        return Error("Req and ws are required.");
-    }
-
-    // req = {action, data}
-    const actions = {
-        '$connect': $connect,
-        '$disconnect': $disconnect,
-        'createConversation': handleCreateConversation,
-        'getConversations': handleGetConversations,
-        'getMessages': handleGetMessages,
-        'sendMessage': handleSendMessage
-    };
-
-    if (!actions[req.action]) {
-        return Promise.reject(`Unknown action type "${req.actions}".`)
-    }
-
-    actions[req.action](req.data)
-        .then((res) => {
-            if (res) ws.send(JSON.stringify(res));
-        })
-        .catch((err) => {
-            logger.error(err);
-        });
-};
+module.exports = makeClientHandler;
