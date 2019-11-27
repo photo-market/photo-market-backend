@@ -15,14 +15,12 @@ const userSchema = new Schema({
 
     snapchat: String,
     facebook: String,
-    twitter: String,
     google: String,
-    instagram: String,
-    linkedin: String,
     tokens: Array,
 
     profile: {
-        name: String,
+        firstName: String,
+        lastName: String,
         gender: String,
         location: String,
         website: String,

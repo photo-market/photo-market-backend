@@ -135,7 +135,7 @@ function init(server) {
 
     // Check all connections once in a while
     setInterval(() => {
-        logger.debug(`Checking if clients are alive.`);
+        //logger.debug(`Checking if clients are alive.`);
         wss.clients.forEach((ws) => {
             if (!ws.isAlive) return ws.terminate();
             ws.isAlive = false;

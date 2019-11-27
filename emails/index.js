@@ -10,10 +10,11 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const email = new Email({
-    // uncomment below to send emails in development/test env:
-    send: true,
-    preview: false,
+    send: !isDev,
+    preview: isDev,
     transport: transporter,
     views: {root: __dirname},
     message: {
@@ -22,8 +23,6 @@ const email = new Email({
 });
 
 exports.sendEmail = (options) => {
-    return email.send(options)
-        .then(logger.info)
-        .catch(logger.error);
+    return email.send(options);
 };
 

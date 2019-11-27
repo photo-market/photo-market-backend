@@ -14,6 +14,8 @@ const randomBytesAsync = promisify(crypto.randomBytes);
 const validationPostLoginSchema = Joi.object().keys({
     email: Joi.string().email().min(3).max(30).required(),
     password: Joi.string().min(6).max(30).required(),
+    rememberMe: Joi.boolean(),
+    device: Joi.string()
 });
 
 const postUpdatePasswordSchema = Joi.object().keys({
@@ -24,7 +26,9 @@ const postUpdatePasswordSchema = Joi.object().keys({
 
 const validationSignupSchema = Joi.object().keys({
     email: Joi.string().email().min(3).max(30).required(),
-    password: Joi.string().min(6).max(30).required()
+    password: Joi.string().min(6).max(30).required(),
+    firstName: Joi.string().required(),
+    lastName: Joi.string().required()
 });
 
 
@@ -32,22 +36,31 @@ const validationSignupSchema = Joi.object().keys({
  * POST /login
  * Sign in using email and password.
  */
-exports.postLogin = (req, res, next) => {
+exports.postLogin = async (req, res, next) => {
     // Validation
     const {error} = validationPostLoginSchema.validate(req.body);
     if (error) {
-        return res.status(400).send({errors: error.details});
+        return res.status(400).send({code: 'BadRequestException', errors: error.details});
     }
 
     // Transform
     req.body.email = validator.normalizeEmail(req.body.email, {gmail_remove_dots: false});
 
-    passport.authenticate('local', (err, user, info) => {
+    passport.authenticate('local', {}, (err, user, info) => {
         if (err) return next(err);
-        if (!user) return res.send({errors: info});
+        if (!user) return res.status(400).send({code: 'NotAuthorizedException', errors: info});
         req.logIn(user, (err) => {
             if (err) return next(err);
-            return res.send({success: 'Success! You are logged in.'});
+            return res.send({
+                code: 'Ok',
+                success: 'Success! You are logged in.',
+                user: {
+                    email: user.email,
+                    createdAt: user.createdAt,
+                    updatedAt: user.createdAt,
+                    profile: user.profile
+                }
+            });
         });
     })(req, res, next);
 };
@@ -95,25 +108,33 @@ exports.postUpdatePassword = (req, res, next) => {
 exports.postSignup = (req, res, next) => {
     const {error} = validationSignupSchema.validate(req.body);
     if (error) {
-        return res.status(400).send({errors: error.details});
+        return res.status(400).send({
+            code: 'BadRequestException',
+            errors: error.details
+        });
     }
 
     const email = validator.normalizeEmail(req.body.email, {gmail_remove_dots: false});
 
     const user = new User({
         email,
-        password: req.body.password
+        password: req.body.password,
+        profile: {
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+        }
     });
 
     User.findOne({email}, (err, existingUser) => {
         if (err) return next(err);
-        if (existingUser) return res.status(400).send({errors: {msg: 'Account with that email address already exists.'}});
+        if (existingUser) return res.status(400).send({
+            code: 'UserExistsException',
+            errors: {msg: 'Account with that email address already exists.'}
+        });
         user.save((err) => {
             if (err) return next(err);
             req.logIn(user, (err) => {
-                if (err) {
-                    return next(err);
-                }
+                if (err) return next(err);
                 return res.status(201).send();
             });
         });
@@ -125,18 +146,19 @@ exports.postSignup = (req, res, next) => {
  * Verify email address
  */
 exports.getVerifyEmailToken = (req, res, next) => {
-    const validationErrors = [];
 
     if (req.user.emailVerified) {
-        return res.status(200).send({msg: 'The email address has been verified already.'});
+        return res.status(400).send({
+            code: 'AlreadyVerifiedException',
+            msg: 'The email address has been verified already.'
+        });
     }
 
     if (req.params.token && (!validator.isHexadecimal(req.params.token))) {
-        validationErrors.push({msg: 'Invalid Token.  Please retry.'});
-    }
-
-    if (validationErrors.length) {
-        return res.status(200).send({errors: validationErrors});
+        return res.status(400).send({
+            code: 'InvalidTokenException',
+            msg: 'Invalid Token.  Please retry.'
+        });
     }
 
     if (req.params.token === req.user.emailVerificationToken) {
@@ -144,7 +166,10 @@ exports.getVerifyEmailToken = (req, res, next) => {
             .findOne({email: req.user.email})
             .then((user) => {
                 if (!user) {
-                    return res.send({error: 'There was an error in loading your profile.'})
+                    return res.send({
+                        code: 'UserNotFoundException',
+                        error: 'There was an error in loading your profile.'
+                    })
                 }
                 user.emailVerificationToken = '';
                 user.emailVerified = true;
@@ -266,11 +291,12 @@ exports.postReset = (req, res, next) => {
  * Create a random token, then the send user an email with a reset link.
  */
 exports.postForgot = (req, res, next) => {
-    const validationErrors = [];
-    if (!validator.isEmail(req.body.email)) validationErrors.push({msg: 'Please enter a valid email address.'});
-
-    if (validationErrors.length) {
-        res.status(400).send({errors: validationErrors});
+    if (!validator.isEmail(req.body.email)) {
+        res.status(400).send({
+            code: 'BadRequestException',
+            msg: 'Please enter a valid email address.'
+        });
+        return;
     }
 
     req.body.email = validator.normalizeEmail(req.body.email, {gmail_remove_dots: false});
@@ -282,7 +308,10 @@ exports.postForgot = (req, res, next) => {
             .findOne({email: req.body.email})
             .then((user) => {
                 if (!user) {
-                    res.send({error: 'Account with that email address does not exist.'})
+                    res.send({
+                        code: 'UserNotFoundException',
+                        msg: 'Account with that email address does not exist.'
+                    });
                 } else {
                     user.passwordResetToken = token;
                     user.passwordResetExpires = Date.now() + 3600000; // 1 hour
@@ -302,8 +331,18 @@ exports.postForgot = (req, res, next) => {
             }
         };
         return emails.sendEmail(options)
-            .then(() => res.status(200).send({info: `An e-mail has been sent to ${req.user.email} with further instructions.`}))
-            .catch(() => res.status(500).send({errors: 'Error sending the email message. Please try again shortly.'}));
+            .then(() => {
+                res.status(200).send({
+                    info: `An e-mail has been sent to ${user.email} with further instructions.`
+                });
+            })
+            .catch((err) => {
+                res.status(500).send({
+                    code: 'SendEmailException',
+                    msg: 'Cant send email message. Please try again shortly.'
+                });
+                throw err;
+            });
     };
 
     createRandomToken
