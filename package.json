@@ -1,7 +1,7 @@
 {
   "name": "photo-market-api",
   "version": "1.0.0",
-  "description": "Rest API for photo-market website.",
+  "description": "API for photo-market website.",
   "main": "app.js",
   "scripts": {
     "dev": "LOG_LEVEL=debug node app.js | ./node_modules/.bin/pino-colada",
@@ -16,7 +16,7 @@
     "bcrypt": "^3.0.6",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
-    "chalk": "^2.4.2bcrypt",
+    "chalk": "^2.4.2",
     "compression": "^1.7.4",
     "connect-mongo": "^3.2.0",
     "cookie-parser": "^1.4.4",
