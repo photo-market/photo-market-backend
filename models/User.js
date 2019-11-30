@@ -1,11 +1,12 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const logger = require('../config/logger');
 const mongoose = require('mongoose');
 const {Schema} = mongoose;
 
 const userSchema = new Schema({
-    email: {type: String, unique: true, required: [true, `Why no password?`]},
-    password: String,
+    email: {type: String, unique: true, required: [true, `Why no password?`], index: true},
+    password: String, // salted and hashed using bcrypt
     passwordResetToken: String,
     passwordResetExpires: Date,
     emailVerificationToken: String,
@@ -33,31 +34,24 @@ const userSchema = new Schema({
 /**
  * Password hash middleware.
  */
-userSchema.pre('save', function save(next) {
+userSchema.pre('save', async function (next) { // NOTE: do not change this to arrow operator
     const user = this;
     if (!user.isModified('password')) {
         return next();
     }
-    bcrypt.genSalt(10, (err, salt) => {
-        if (err) {
-            return next(err);
-        }
-        bcrypt.hash(user.password, salt, (err, hash) => {
-            if (err) {
-                return next(err);
-            }
-            user.password = hash;
-            next();
-        });
-    });
+    const hashCost = 10;
+    user.password = await bcrypt.hash(user.password, hashCost);
+    next();
 });
 
 /**
  * Helper method for validating user's password.
  */
-userSchema.methods.comparePassword = function comparePassword(candidatePassword, cb) {
-    bcrypt.compare(candidatePassword, this.password, (err, isMatch) => {
-        cb(err, isMatch);
+userSchema.methods.verifyPassword = function (candidatePassword) { // Note: do not replace with arrow-function
+    return new Promise((resolve) => {
+        bcrypt.compare(candidatePassword, this.password, (err, isMatch) => {
+            resolve(!err && isMatch);
+        });
     });
 };
 

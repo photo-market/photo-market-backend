@@ -1,4 +1,5 @@
 const express = require('express');
+const passport = require('passport');
 const router = express.Router();
 
 /**
@@ -24,7 +25,7 @@ router.get('/', homeController.index);
 router.post('/auth/login', authController.postLogin);
 router.post('/auth/logout', authController.logout);
 router.post('/auth/forgot', authController.postForgot);
-router.post('/auth/reset/:token', authController.postReset);
+router.post('/auth/reset-password', authController.postReset);
 router.post('/auth/signup', authController.postSignup);
 router.post('/auth/verify', passportConfig.isAuthenticated, authController.postVerifyEmail);
 router.get('/auth/verify/:token', passportConfig.isAuthenticated, authController.getVerifyEmailToken);

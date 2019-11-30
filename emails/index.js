@@ -22,7 +22,5 @@ const email = new Email({
     }
 });
 
-exports.sendEmail = (options) => {
-    return email.send(options);
-};
+exports.sendEmail = email.send;
 

@@ -1,7 +1,7 @@
 const passport = require('passport');
-const axios = require('axios');
 const moment = require('moment');
 const refresh = require('passport-oauth2-refresh');
+const logger = require('../config/logger');
 const {Strategy: LocalStrategy} = require('passport-local');
 const {Strategy: GoogleStrategy} = require('passport-google-oauth');
 const {Strategy: FacebookStrategy} = require('passport-facebook');
@@ -20,32 +20,21 @@ passport.deserializeUser((id, done) => {
 
 /**
  * Sign in using Email and Password.
+ * The Local strategy extracts the username and password from req.body and verifies the user by verifying it against the User table.
  */
-passport.use(new LocalStrategy({usernameField: 'email'}, (email, password, done) => {
-    User.findOne({email: email.toLowerCase()}, (err, user) => {
-        if (err) {
-            return done(err);
-        }
-        if (!user) {
-            return done(null, false, {msg: `Email ${email} not found.`});
-        }
-        if (!user.password) {
-            return done(null, false, {msg: 'Your account was registered using a sign-in provider. To enable password login, sign in using a provider, and then set a password under your user profile.'});
-        }
-
-        user.comparePassword(password, (err, isMatch) => {
-            if (err) {
-                return done(err);
-            }
-            if (isMatch) {
-                return done(null, user);
-            }
-            return done(null, false, {msg: 'Invalid email or password.'});
-        });
-    }).catch(done);
+passport.use(new LocalStrategy({usernameField: 'email'}, async (email, password, done) => {
+    try {
+        const user = await User.findOne({email: email.toLowerCase()}).exec();
+        if (!user) return done(null, false, {msg: `Email ${email} not found.`});
+        if (!user.password) return done(null, false, {msg: 'Your account was registered using a sign-in provider. To enable password login, sign in using a provider, and then set a password under your user profile.'});
+        if (!await user.verifyPassword(password)) return done(null, false, {msg: 'Invalid email or password.'});
+        return done(null, user);
+    } catch (e) {
+        done(e, false);
+    }
 }));
 
-//
+
 // passport.use(new GoogleStrategy({
 //         returnURL: 'http://localhost:3000/auth/google/return',
 //         realm: 'http://localhost:3000/'

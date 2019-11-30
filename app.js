@@ -90,20 +90,28 @@ app.use((req, res, next) => {
  * Error Handler.
  * Must be added at the end of the middleware function stack.
  */
-if (process.env.NODE_ENV === 'development') {
-    // show stacktraces only use in development
-    const errorHandler = require('errorhandler');
-    app.use(errorHandler());
-}
-
 app.use((err, req, res, next) => {
     logger.error(err);
-    res.status(500).send({error: 'Server Error'});
+    let responseObj = {
+        success: false,
+        data: [],
+        error: err,
+        msg: 'There was some internal server error.',
+    };
+    let responseStatusCode = 500;
+    if (err) {
+        if (err.code) {
+            responseStatusCode = err.code;
+            responseObj.msg = err.msg;
+        }
+    }
+    if (!res.headersSent) {
+        res.status(responseStatusCode).json(responseObj);
+    }
 });
 
-
 /**
- * Add websocket.
+ * Add websocket support.
  */
 require('./config/websocket')(server);
 
