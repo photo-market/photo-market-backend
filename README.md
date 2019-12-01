@@ -13,7 +13,7 @@
 * Commercial
 
 ## Websockets
-nginx don't support websocket，but it can proxy websocket connetions
+NGINX doesn't support websocket，but it can proxy websocket connections
 ```
 location /chat/ {
     proxy_pass http://backend;
