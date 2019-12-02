@@ -13,6 +13,7 @@ const pConfig = require('../config/passport');
 const authController = require('../controllers/auth');
 const homeController = require('../controllers/home');
 const userController = require('../controllers/user');
+const portfolioController = require('../controllers/portfolio');
 
 /**
  * Configure router map
@@ -37,6 +38,9 @@ router.get('/auth/sessions', pConfig.isAuthenticated, authController.getSessions
 router.get('/account', pConfig.isAuthenticated, userController.getAccount);
 router.post('/account/profile', pConfig.isAuthenticated, userController.postUpdateProfile);
 router.post('/account/delete', pConfig.isAuthenticated, userController.postDeleteAccount);
+
+// Portfolio
+router.get('/portfolio/:userId', portfolioController.getPortfolio);
 
 // Service area
 router.use('/admin', require('./admin'));

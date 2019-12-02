@@ -15,19 +15,43 @@ const userSchema = new Schema({
     lastSeen: Date,
     //connectionIds: Array, // Will be used later to identify AWS API Gateway websockets
 
-    snapchat: String,
-    facebook: String,
     google: String,
-    tokens: Array,
+    facebook: String,
+
 
     profile: {
         firstName: String,
         lastName: String,
         gender: String,
         location: String,
+        picture: String,
+        rating: Number,
+        phone: String,
         website: String,
-        picture: String
-    }
+        businessHours: String,
+
+        // Social profiles
+        instagramUrl: String,
+        linkedinUrl: String,
+        facebookUrl: String,
+        twitterUrl: String,
+        vimeoUrl: String,
+        youtubeUrl: String,
+        flickrUrl: String,
+        pinterestUrl: String,
+    },
+
+    projects: [{
+        projectId: {type: String, required: true},
+        title: String,
+        description: String,
+        photoUrls: Array,
+        reviews: [{
+            reviewId: {type: String, required: true},
+            reviewerId: {type: Schema.Types.ObjectId, ref: 'User', required: true},
+            content: String,
+        }]
+    }]
 }, {
     timestamps: true
 }); // If set timestamps, mongoose assigns createdAt and updatedAt fields to your schema
