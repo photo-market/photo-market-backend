@@ -56,7 +56,7 @@ app.use(cors({
 }));
 app.use(compression());
 app.use(useragent.express());
-app.use(expressStatusMonitor({path: '/status', ignoreStartsWith: '/admin'}));
+//app.use(expressStatusMonitor({path: '/status', ignoreStartsWith: '/admin'}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(session({

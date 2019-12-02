@@ -11,9 +11,8 @@ const userSchema = new Schema({
     passwordResetExpires: Date,
     emailVerificationToken: String,
     emailVerified: Boolean,
-    lastSeen: Date,
     lastLogin: Date,
-    devices: Array,
+    lastSeen: Date,
     //connectionIds: Array, // Will be used later to identify AWS API Gateway websockets
 
     snapchat: String,

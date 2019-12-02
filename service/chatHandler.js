@@ -5,15 +5,15 @@ const User = require('../models/User');
 
 function makeClientHandler(sendEvent) {
 
-    function _updateLastSeen(data) {
+    async function _updateLastSeen(data) {
         if (!data.userId) {
             return Promise.reject(`UserId is required.`);
         }
-        return User.findById(data.userId).exec()
-            .then((user) => {
-                user.lastSeen = new Date();
-                return user.save();
-            });
+        const user = await User.findById(data.userId).exec();
+        if (user) {
+            user.lastSeen = new Date();
+            user.save();
+        }
     }
 
     function $connect(data) {
