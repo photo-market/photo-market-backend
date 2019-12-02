@@ -5,7 +5,7 @@ const router = express.Router();
 /**
  * API keys and Passport configuration.
  */
-const passportConfig = require('../config/passport');
+const pConfig = require('../config/passport');
 
 /**
  * Import controllers
@@ -27,15 +27,16 @@ router.post('/auth/logout', authController.logout);
 router.post('/auth/forgot', authController.postForgot);
 router.post('/auth/reset-password', authController.postReset);
 router.post('/auth/signup', authController.postSignup);
-router.post('/auth/verify', passportConfig.isAuthenticated, authController.postVerifyEmail);
-router.get('/auth/verify/:token', passportConfig.isAuthenticated, authController.getVerifyEmailToken);
-router.post('/auth/password', passportConfig.isAuthenticated, authController.postUpdatePassword);
-router.get('/auth/unlink/:provider', passportConfig.isAuthenticated, authController.getOauthUnlink);
+router.post('/auth/verify', pConfig.isAuthenticated, authController.postVerifyEmail);
+router.get('/auth/verify/:token', pConfig.isAuthenticated, authController.getVerifyEmailToken);
+router.post('/auth/password', pConfig.isAuthenticated, authController.postUpdatePassword);
+router.get('/auth/unlink/:provider', pConfig.isAuthenticated, authController.getOauthUnlink);
+router.get('/auth/sessions', pConfig.isAuthenticated, authController.getSessions);
 
 // Account
-router.get('/account', passportConfig.isAuthenticated, userController.getAccount);
-router.post('/account/profile', passportConfig.isAuthenticated, userController.postUpdateProfile);
-router.post('/account/delete', passportConfig.isAuthenticated, userController.postDeleteAccount);
+router.get('/account', pConfig.isAuthenticated, userController.getAccount);
+router.post('/account/profile', pConfig.isAuthenticated, userController.postUpdateProfile);
+router.post('/account/delete', pConfig.isAuthenticated, userController.postDeleteAccount);
 
 // Service area
 router.use('/admin', require('./admin'));

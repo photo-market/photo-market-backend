@@ -54,6 +54,10 @@ exports.postLogin = asyncHandler(async (req, res, next) => {
         if (err || !user) return res.status(400).send({code: 'NotAuthorizedException', msg: info});
         req.login(user, (err) => {
             if (err) return next(err);
+            req.session.time = new Date().toISOString();
+            req.session.device = _.pick(req.useragent, ['browser', 'version', 'os', 'platform', 'source']) || 'unknown';
+            user.lastLogin = new Date().toISOString();
+            user.save();
             return res.status(200).send({
                 code: 'Ok',
                 success: 'Success! You are logged in.',
@@ -69,16 +73,27 @@ exports.postLogin = asyncHandler(async (req, res, next) => {
     })(req, res, next);
 });
 
+exports.getSessions = (req, res, next) => {
+    req.sessionStore.all((err, sessions) => { // all user sessions
+        const data = sessions.filter(s => _.get(s, 'passport.user') === req.user._id.toString());
+        res.send(data);
+    });
+};
+
 /**
  * POST /logout
  * Log out.
  */
 exports.logout = (req, res) => {
+    const sessionId = req.session.id;
     req.logout();
     req.session.destroy((err) => {
         if (err) logger.error('Error : Failed to destroy the session during logout.', err);
         req.user = null;
         res.status(201).send();
+    });
+    req.sessionStore.destroy(sessionId, () => {
+        logger.info(`Session ${sessionId} removed`);
     });
 };
 

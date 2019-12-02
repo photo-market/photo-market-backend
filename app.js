@@ -12,6 +12,7 @@ const MongoStore = require('connect-mongo')(session);
 const mongoose = require('mongoose');
 const logger = require('./config/logger');
 const expressLogger = require('express-pino-logger')({logger});
+const useragent = require('express-useragent');
 
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
@@ -46,7 +47,7 @@ const server = http.createServer(app);
 /**
  * Express configuration.
  */
-app.set('port', process.env.PORT || 8080);
+app.set('port', process.env.API_PORT || 8080);
 app.disable('x-powered-by');
 app.use(expressLogger);
 app.use(cors({
@@ -54,6 +55,7 @@ app.use(cors({
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
 app.use(compression());
+app.use(useragent.express());
 app.use(expressStatusMonitor({path: '/status', ignoreStartsWith: '/admin'}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -65,6 +67,7 @@ app.use(session({
     store: new MongoStore({
         url: process.env.MONGODB_URI,
         autoReconnect: true,
+        autoRemove: 'native' // Default
     })
 }));
 app.use(passport.initialize());

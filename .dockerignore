@@ -1,5 +1,9 @@
 npm-debug.log
 README.md
 .env
+.gitignore
 .travis.yml
 .sonarcloud.properties
+deploy.sh
+*.iml
+.idea/

@@ -25,9 +25,9 @@ passport.deserializeUser((id, done) => {
 passport.use(new LocalStrategy({usernameField: 'email'}, async (email, password, done) => {
     try {
         const user = await User.findOne({email: email.toLowerCase()}).exec();
-        if (!user) return done(null, false, {msg: `Email ${email} not found.`});
-        if (!user.password) return done(null, false, {msg: 'Your account was registered using a sign-in provider. To enable password login, sign in using a provider, and then set a password under your user profile.'});
-        if (!await user.verifyPassword(password)) return done(null, false, {msg: 'Invalid email or password.'});
+        if (!user) return done(null, false, `Email ${email} not found.`);
+        if (!user.password) return done(null, false, 'Your account was registered using a sign-in provider. To enable password login, sign in using a provider, and then set a password under your user profile.');
+        if (!await user.verifyPassword(password)) return done(null, false, 'Invalid email or password.');
         return done(null, user);
     } catch (e) {
         done(e, false);

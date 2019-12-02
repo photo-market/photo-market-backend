@@ -101,7 +101,7 @@ function makeClientHandler(sendEvent) {
             uuid: data.uuid,
             conversation: data.conversationId,
             sender: data.userId,
-            createdAt: Date.now(),
+            createdAt: new Date().toISOString(),
             content: data.content,
         });
 

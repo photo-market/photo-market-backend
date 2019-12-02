@@ -31,6 +31,7 @@
     "express-pino-logger": "^4.0.0",
     "express-session": "^1.17.0",
     "express-status-monitor": "^1.2.7",
+    "express-useragent": "^1.0.13",
     "helmet": "^3.21.2",
     "lodash": "^4.17.15",
     "mailchecker": "^3.3.1",
