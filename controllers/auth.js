@@ -313,7 +313,7 @@ exports.postForgot = asyncHandler(async (req, res, next) => {
             template: 'forgot-password',
             message: {to: user.email},
             locals: {
-                host: req.headers.host,
+                host: process.env.BASE_URL,
                 token: user.passwordResetToken
             }
         });
