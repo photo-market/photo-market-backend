@@ -27,6 +27,7 @@ const userSchema = new Schema({
         picture: String,
         rating: Number,
         phone: String,
+        about: String,
         website: String,
         businessHours: String,
 
