@@ -64,7 +64,7 @@ app.use(session({
     saveUninitialized: true,
     secret: process.env.SESSION_SECRET,
     cookie: {
-        domain: ['photo-market.club'],
+        domain: ['.photo-market.club'],
         maxAge: 1209600000 // two weeks in milliseconds
     },
     store: new MongoStore({

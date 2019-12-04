@@ -5,6 +5,13 @@ const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const User = require("../models/User");
 
+exports.getPortfolios = asyncHandler(async (req, res, next) => {
+    User.find({}, (err, docs) => {
+        if (err) next(err);
+        res.send(docs);
+    });
+});
+
 exports.getPortfolio = asyncHandler(async (req, res, next) => {
     const userId = mongoose.Types.ObjectId(req.params.userId);
     console.log(userId);

@@ -40,7 +40,8 @@ router.post('/account/profile', pConfig.isAuthenticated, userController.postUpda
 router.post('/account/delete', pConfig.isAuthenticated, userController.postDeleteAccount);
 
 // Portfolio
-router.get('/portfolio/:userId', portfolioController.getPortfolio);
+router.get('/portfolios', portfolioController.getPortfolios);
+router.get('/portfolios/:userId', portfolioController.getPortfolio);
 
 // Service area
 router.use('/admin', require('./admin'));
