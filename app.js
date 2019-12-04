@@ -51,7 +51,8 @@ app.disable('x-powered-by');
 app.use(expressLogger);
 app.use(cors({
     origin: [process.env.CORS_ORIGIN],
-    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+    credentials: true, // Configures the Access-Control-Allow-Credentials CORS header
+    optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
 app.use(compression());
 app.use(useragent.express());
