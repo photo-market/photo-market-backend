@@ -7,7 +7,6 @@ const passport = require('passport');
 const dotenv = require('dotenv');
 const chalk = require('chalk');
 const session = require('express-session');
-const expressStatusMonitor = require('express-status-monitor');
 const MongoStore = require('connect-mongo')(session);
 const mongoose = require('mongoose');
 const logger = require('./config/logger');
@@ -51,7 +50,7 @@ app.set('port', process.env.API_PORT || 8080);
 app.disable('x-powered-by');
 app.use(expressLogger);
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://photo-market.club'],
+    origin: [process.env.CORS_ORIGIN],
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
 app.use(compression());
@@ -64,7 +63,7 @@ app.use(session({
     saveUninitialized: true,
     secret: process.env.SESSION_SECRET,
     cookie: {
-        domain: ['.photo-market.club'],
+        domain: process.env.COOKIE_DOMAIN,
         maxAge: 1209600000 // two weeks in milliseconds
     },
     store: new MongoStore({
