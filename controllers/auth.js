@@ -73,6 +73,10 @@ exports.postLogin = asyncHandler(async (req, res, next) => {
     })(req, res, next);
 });
 
+/**
+ * GET /auth/sessions
+ * Returns list of all user sessions.
+ */
 exports.getSessions = (req, res, next) => {
     req.sessionStore.all((err, sessions) => { // all user sessions
         const data = sessions.filter(s => _.get(s, 'passport.user') === req.user._id.toString());
