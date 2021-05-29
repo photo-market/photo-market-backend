@@ -46,7 +46,7 @@
     "uuid": "^3.3.3",
     "validator": "^12.0.0",
     "winston": "^3.2.1",
-    "ws": "^7.2.0"
+    "ws": "^7.4.6"
   },
   "devDependencies": {
     "errorhandler": "^1.5.1",
